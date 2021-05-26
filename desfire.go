@@ -1,5 +1,7 @@
 package main
 
+// Transforms a native DESFire command like `0x60` into
+// a wrapped APDU like `0x90 0x60 0x00 0x00`.
 func wrapCommand(command []byte) []byte {
 	wrapper := []byte{0x90, command[0], 0x00, 0x00} // CLA, INS, P1, P2 bytes
 	if len(command) > 1 {

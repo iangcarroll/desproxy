@@ -73,6 +73,10 @@ func directTransmit(card *scard.Card, command []byte) ([]byte, error) {
 	return card.Control(acsControlCommand, directTransmit)
 }
 
+func controlTransmit(card *scard.Card, command []byte) ([]byte, error) {
+	return card.Control(acsControlCommand, command)
+}
+
 func normalTransmit(card *scard.Card, command []byte) ([]byte, error) {
 	return card.Transmit(command)
 }

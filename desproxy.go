@@ -27,7 +27,6 @@ func main() {
 	// Establish the target.
 	target, err := connectToCard(1, false)
 	check(err)
-	coldResetCard(target)
 
 	_, err = initEmulation(emulator)
 	check(err)
@@ -48,23 +47,18 @@ func main() {
 		// since something is randomly putting these cards in this mode, and
 		// once a 7816 frame is sent, you cannot go back...
 		log.Println("Sending the target wrapped; unwrapped:", asHex(proxiedCommand))
-		targetResponse, err := normalTransmit(target, wrapCommand(proxiedCommand))
+		targetResponse, err := normalTransmit(target, proxiedCommand)
 		log.Println("Target responded", len(targetResponse), asHex(targetResponse), err)
 
-		// Move the APDU SW2 to the first byte.
-		fixedResponse := targetResponse[:len(targetResponse)-2]
-		fixedSw2 := targetResponse[len(targetResponse)-1]
-		fixedResponse = append([]byte{fixedSw2}, fixedResponse...)
-
 		// Apple Pay uses DESFire GET VERSION but does not close it out, resulting in
-		// COMMAND_ABORTED if not treated. Probably because of our re-framing.
-		if proxiedCommand[0] == 0x60 && fixedSw2 == 0xaf {
-			normalTransmit(target, wrapCommand([]byte{0xaf}))
-			normalTransmit(target, wrapCommand([]byte{0xaf}))
+		// COMMAND_ABORTED if not treated.
+		if proxiedCommand[0] == 0x60 && targetResponse[0] == 0xaf {
+			normalTransmit(target, []byte{0xaf})
+			normalTransmit(target, []byte{0xaf})
 		}
 
 		// Send our fixed response back.
-		log.Println("Sending", asHex(fixedResponse), "back.")
-		sendResponse(emulator, fixedResponse)
+		log.Println("Sending", asHex(targetResponse), "back.")
+		sendResponse(emulator, targetResponse)
 	}
 }
