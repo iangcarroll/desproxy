@@ -1,2 +1,2 @@
 # desproxy
-Go tooling for intercepting and modifying DESFire APDUs, using two ACR122 devices to communicate with and emulate an external card.
+Go tooling for intercepting and modifying DESFire APDUs, using two ACR122 devices to communicate with and emulate an external card. Currently a big work-in-progress, but it is able to relay simple commands.
