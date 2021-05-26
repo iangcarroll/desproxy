@@ -46,9 +46,9 @@ func connectToCard(offset uint8, emulator bool) (*scard.Card, error) {
 }
 
 func warmResetCard(card *scard.Card) {
-	card.Reconnect(scard.ShareDirect, card.ActiveProtocol(), scard.ResetCard)
+	check(card.Reconnect(scard.ShareDirect, card.ActiveProtocol(), scard.ResetCard))
 }
 
 func coldResetCard(card *scard.Card) {
-	card.Reconnect(scard.ShareDirect, card.ActiveProtocol(), scard.UnpowerCard)
+	check(card.Reconnect(scard.ShareDirect, card.ActiveProtocol(), scard.UnpowerCard))
 }
