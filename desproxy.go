@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 func check(err error) {
 	if err != nil {
@@ -17,8 +20,11 @@ func main() {
 	_, err = connectToCard(1)
 	check(err)
 
+	log.Println(initEmulation(emulator))
 	for {
-		directTransmit(emulator, []byte{})
-		time.Sleep(time.Millisecond * 500)
+		command, err := receiveCommand(emulator)
+		log.Println(command, err)
+
+		time.Sleep(time.Second)
 	}
 }
