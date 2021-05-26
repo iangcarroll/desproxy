@@ -36,12 +36,6 @@ func connectToCard(offset uint8, emulator bool) (*scard.Card, error) {
 		return nil, err
 	}
 
-	// Set the LED to ensure our control commands work.
-	//_, err = card.Control(acsControlCommand, []byte{0xff, 0x00, 0x40, 0x0f, 0x04, 0x00, 0x00, 0x00, 0x00})
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	return card, nil
 }
 

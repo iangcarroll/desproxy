@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/ebfe/scard"
+)
+
 // Transforms a native DESFire command like `0x60` into
 // a wrapped APDU like `0x90 0x60 0x00 0x00`.
 func wrapCommand(command []byte) []byte {
@@ -11,4 +15,20 @@ func wrapCommand(command []byte) []byte {
 	wrapper = append(wrapper, 0x00) // Le byte
 
 	return wrapper
+}
+
+func ensureNativeCommands(card *scard.Card) {
+	for i := 0; i < 3; i++ {
+		testRes, err := normalTransmit(card, []byte{0x6a})
+		check(err)
+
+		if testRes[0] == 0x67 || testRes[0] == 0x68 {
+			// Try cold reset.
+			coldResetCard(card)
+		} else {
+			return
+		}
+	}
+
+	panic("DESFire card not correctly allowing native command")
 }

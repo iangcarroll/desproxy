@@ -5,12 +5,14 @@ import (
 	"log"
 )
 
+// Calls `panic` when an error is present.
 func check(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
+// Returns a []byte as a hex string; []byte{0xff, 0xaa} = "ffaa".
 func asHex(in []byte) (out string) {
 	for _, byt := range in {
 		out += fmt.Sprintf("%02x", byt)
@@ -28,42 +30,34 @@ func main() {
 	target, err := connectToCard(1, false)
 	check(err)
 
-	allowsNativeCommand := false
+	// Ensure the target will support native DESFire APDUs.
+	ensureNativeCommands(target)
 
-	for i := 0; i < 3 && !allowsNativeCommand; i++ {
-		testRes, err := normalTransmit(target, []byte{0x60})
-		check(err)
-
-		if testRes[0] == 0x67 || testRes[0] == 0x68 {
-			log.Println(asHex(testRes))
-			log.Println("DESFire card not correctly allowing native command")
-
-			// Try cold reset.
-			coldResetCard(target)
-		} else {
-			allowsNativeCommand = true
-		}
-	}
-
-	if !allowsNativeCommand {
-		panic("DESFire card not correctly allowing native command")
-	}
-
+	// Initialize the emulation with the ACR122u.
 	_, err = initEmulation(emulator)
 	check(err)
 
 	for {
+		// Receive a command sent from a reader.
 		command, err := receiveCommand(emulator)
 
-		if len(command) > 2 && command[2] == 0x13 {
+		// We lost connection; bring the emulation back up.
+		if len(command) > 2 && (command[2] == 0x13 || command[2] == 0x25) {
 			log.Println("New emulation session.")
+
+			// Cold reset the target card.
+			coldResetCard(target)
+
+			// Re-initialize the emulation on the emulator.
 			_, err = initEmulation(emulator)
 			check(err)
+
+			// Go back to trying to receive a message.
+			continue
 		}
 
 		// If we didn't actually receive an APDU, keep waiting.
 		if err != nil || len(command) < 3 || command[2] != 0x00 {
-			log.Println("Skipped response", asHex(command))
 			continue
 		}
 
@@ -71,20 +65,15 @@ func main() {
 		proxiedCommand := command[3 : len(command)-2]
 		log.Println("Received", asHex(proxiedCommand))
 
-		// Let's wrap this DESFire-native command with 7816. This has to happen
-		// since something is randomly putting these cards in this mode, and
-		// once a 7816 frame is sent, you cannot go back...
-		log.Println("Sending the target wrapped; unwrapped:", asHex(proxiedCommand))
+		// Send `proxiedCommand` to the target and get the `targetResponse`.
+		log.Println("Sending the target:", asHex(proxiedCommand))
 		targetResponse, err := normalTransmit(target, proxiedCommand)
 		log.Println("Target responded", len(targetResponse), asHex(targetResponse), err)
 
-		// Annoying.
-		if proxiedCommand[0] == 0x60 && targetResponse[0] == 0x67 {
-			panic("DESFire card not correctly allowing native command")
-		}
-
-		// Apple Pay uses DESFire GET VERSION but does not close it out, resulting in
-		// COMMAND_ABORTED if not treated.
+		// Apple Pay uses DESFire GET VERSION as part of its initial recognition
+		// but does not close it out, resulting in COMMAND_ABORTED. In theory
+		// we could make this more robust by detecting when the previous
+		// command returned 0xAF and the next command isn't 0xAF.
 		if proxiedCommand[0] == 0x60 && targetResponse[0] == 0xaf {
 			normalTransmit(target, []byte{0xaf})
 			normalTransmit(target, []byte{0xaf})
