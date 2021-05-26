@@ -17,6 +17,12 @@ type EmulationRequest struct {
 	HistoricalAts []byte // 48 byte maximum
 }
 
+var (
+	nxpInitiateEmulation = []byte{0xd4, 0x8c}
+	nxpGetData           = []byte{0xd4, 0x86}
+	nxpSendData          = []byte{0xd4, 0x8e}
+)
+
 func (e *EmulationRequest) Serialize() []byte {
 	// Start off with the mode byte...
 	serialized := []byte{e.Mode}
@@ -60,15 +66,15 @@ func (e *EmulationRequest) Serialize() []byte {
 	return serialized
 }
 
-var (
-	nxpInitiateEmulation = []byte{0xd4, 0x8c}
-)
-
 func directTransmit(card *scard.Card, command []byte) ([]byte, error) {
 	directTransmit := []byte{0xFF, 0x00, 0x00, 0x00, uint8(len(command))}
 	directTransmit = append(directTransmit, command...)
 
 	return card.Control(acsControlCommand, directTransmit)
+}
+
+func normalTransmit(card *scard.Card, command []byte) ([]byte, error) {
+	return card.Transmit(command)
 }
 
 func initEmulation(card *scard.Card) ([]byte, error) {
@@ -88,5 +94,10 @@ func initEmulation(card *scard.Card) ([]byte, error) {
 }
 
 func receiveCommand(card *scard.Card) ([]byte, error) {
-	return directTransmit(card, []byte{0xd4, 0x86})
+	return directTransmit(card, nxpGetData)
+}
+
+func sendResponse(card *scard.Card, response []byte) ([]byte, error) {
+	command := append(nxpSendData, response...)
+	return directTransmit(card, command)
 }
