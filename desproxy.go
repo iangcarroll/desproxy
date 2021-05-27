@@ -5,10 +5,6 @@ import (
 	"log"
 )
 
-const (
-	rewritesEnabled = false
-)
-
 // Calls `panic` when an error is present.
 func check(err error) {
 	if err != nil {

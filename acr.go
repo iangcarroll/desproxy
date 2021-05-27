@@ -23,6 +23,8 @@ var (
 	nxpSendData          = []byte{0xd4, 0x8e}
 )
 
+// Serializes the rather complicated emulation request for the ACR122.
+// Append output to `nxpInitiateEmulation`.
 func (e *EmulationRequest) Serialize() []byte {
 	// Start off with the mode byte...
 	serialized := []byte{e.Mode}
@@ -66,21 +68,26 @@ func (e *EmulationRequest) Serialize() []byte {
 	return serialized
 }
 
+// Sends a command to the PN532.
 func directTransmit(card *scard.Card, command []byte) ([]byte, error) {
 	directTransmit := []byte{0xFF, 0x00, 0x00, 0x00, uint8(len(command))}
 	directTransmit = append(directTransmit, command...)
 
-	return card.Control(acsControlCommand, directTransmit)
+	return controlTransmit(card, directTransmit)
 }
 
+// Sends a control command, which allows emulation to work even without an
+// inserted card.
 func controlTransmit(card *scard.Card, command []byte) ([]byte, error) {
 	return card.Control(acsControlCommand, command)
 }
 
+// Sends a normal command to the card.
 func normalTransmit(card *scard.Card, command []byte) ([]byte, error) {
 	return card.Transmit(command)
 }
 
+// Initializes ACR122/PN532 emulation with static parameters.
 func initEmulation(card *scard.Card) ([]byte, error) {
 	req := EmulationRequest{
 		Mode:          0x00,
@@ -97,10 +104,12 @@ func initEmulation(card *scard.Card) ([]byte, error) {
 	return directTransmit(card, command)
 }
 
+// Receives an APDU sent to the emulated card (or undocumented errors).
 func receiveCommand(card *scard.Card) ([]byte, error) {
 	return directTransmit(card, nxpGetData)
 }
 
+// Sends the response APDU to a request sent to the emulated card.
 func sendResponse(card *scard.Card, response []byte) ([]byte, error) {
 	command := append(nxpSendData, response...)
 	return directTransmit(card, command)

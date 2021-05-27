@@ -17,6 +17,9 @@ func wrapCommand(command []byte) []byte {
 	return wrapper
 }
 
+// When a DESFire card receives a 7816-4 wrapped frame at any point, it refuses
+// to recognize any future DESFire-native commands. As a result we need to
+// cold reset the target card until it cooperates.
 func ensureNativeCommands(card *scard.Card) {
 	for i := 0; i < 3; i++ {
 		testRes, err := normalTransmit(card, []byte{0x6a})
