@@ -9,6 +9,8 @@ git clone git@github.com:iangcarroll/desproxy.git
 cd desproxy && go run .
 ```
 
+In terms of readers, you can use any PC/SC reader to communicate with the real, underlying card. However, please ensure it supports native DESFire framing, as you are likely to have a hard time otherwise. The OmniKey series typically requires setting the `DesfireNative` registry key. The pre-flight routines will ensure your reader passes these commands correctly, or it will panic.
+
 ### Usage
 By default, `desproxy` uses the first reader it finds as the emulator, and the second reader as the target. It immediately begins an emulation session with the emulator, and waits for a reader to connect to the emulated card. An example log is like this:
 
