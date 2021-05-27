@@ -27,3 +27,6 @@ In this log, the reader connected to the ACR122 and sent a native DESFire comman
 While an unlimited amount of commands or attempts can be used with the emulator, care should be taken to understand the fragility of the PN532's emulation setup. It is easy for `desproxy` to become desynchronized from the true emulation state, and bugs have especially been noticable when a reader soft or hard resets the emulated card, which is not detected by `desproxy` and thus the state of the card can become corrupted.
 
 For example, when Apple Pay connects to certain transit cards, it runs a `validateCardScript` which sends multiple commands to the card to verify it is the correct kind. It seems to issue a soft reset in between these commands, which prevents bugs when it calls commands like `0x60` that throw an aborted command error when they are not fully read out. However, you will likely need to handle these types of issues yourself -- adding logic to `desproxy.go` to call `coldResetCard` in certain circumstances should be pretty easy.
+
+### Problems
+I've had to abandon using the ACR122 for certain applications because it does not support emulating a 7-byte UID; only three of the four UID bytes are changable via its emulation API. As a result, if cards use key derivation based on the card UID, the proxy will prevent authentication from succeeding.
