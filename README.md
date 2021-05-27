@@ -29,4 +29,9 @@ While an unlimited amount of commands or attempts can be used with the emulator,
 For example, when Apple Pay connects to certain transit cards, it runs a `validateCardScript` which sends multiple commands to the card to verify it is the correct kind. It seems to issue a soft reset in between these commands, which prevents bugs when it calls commands like `0x60` that throw an aborted command error when they are not fully read out. However, you will likely need to handle these types of issues yourself -- adding logic to `desproxy.go` to call `coldResetCard` in certain circumstances should be pretty easy.
 
 ### Problems
-I've had to abandon using the ACR122 for certain applications because it does not support emulating a 7-byte UID; only three of the four UID bytes are changable via its emulation API. As a result, if cards use key derivation based on the card UID, the proxy will prevent authentication from succeeding.
+I've had to abandon using the ACR122 for certain applications because it does not support emulating a 7-byte UID; only three of the four UID bytes are changable via its emulation API. As a result, if cards check or use key derivation based on the card UID, the proxy will prevent authentication from succeeding.
+
+### Other work
+These resources were very helpful in building this:
+* https://salmg.net/2017/12/11/acr122upn532-nfc-card-emulation/
+* https://github.com/AdamLaurie/RFIDIOt
