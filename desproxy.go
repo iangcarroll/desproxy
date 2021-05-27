@@ -5,6 +5,10 @@ import (
 	"log"
 )
 
+const (
+	rewritesEnabled = false
+)
+
 // Calls `panic` when an error is present.
 func check(err error) {
 	if err != nil {
@@ -45,12 +49,12 @@ func main() {
 		if len(command) > 2 && (command[2] == 0x13 || command[2] == 0x25) {
 			log.Println("New emulation session.")
 
-			// Cold reset the target card.
-			coldResetCard(target)
-
 			// Re-initialize the emulation on the emulator.
 			_, err = initEmulation(emulator)
 			check(err)
+
+			// Cold reset the target card.
+			coldResetCard(target)
 
 			// Go back to trying to receive a message.
 			continue
@@ -70,14 +74,7 @@ func main() {
 		targetResponse, err := normalTransmit(target, proxiedCommand)
 		log.Println("Target responded", len(targetResponse), asHex(targetResponse), err)
 
-		// Apple Pay uses DESFire GET VERSION as part of its initial recognition
-		// but does not close it out, resulting in COMMAND_ABORTED. In theory
-		// we could make this more robust by detecting when the previous
-		// command returned 0xAF and the next command isn't 0xAF.
-		if proxiedCommand[0] == 0x60 && targetResponse[0] == 0xaf {
-			normalTransmit(target, []byte{0xaf})
-			normalTransmit(target, []byte{0xaf})
-		}
+		// This is the ideal place to manipulate any response data before it goes back to the real reader.
 
 		// Send our fixed response back.
 		log.Println("Sending", asHex(targetResponse), "back.")
